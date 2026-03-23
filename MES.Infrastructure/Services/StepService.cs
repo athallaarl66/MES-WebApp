@@ -1,4 +1,5 @@
 using MES.Core.Entities;
+using MES.Core.Enums;
 using MES.Core.Interfaces;
 using MES.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -16,99 +17,151 @@ public class StepService : IStepService
 
     public async Task StartStepAsync(int stepExecutionId, string operatorName)
     {
-        var stepExecution = await GetStepExecutionWithContext(stepExecutionId);
+        await using var transaction = await _db.Database.BeginTransactionAsync();
 
-        ValidateStepCanStart(stepExecution);
-
-        stepExecution.Status = "in_progress";
-        stepExecution.StartedAt = DateTime.UtcNow;
-        stepExecution.ExecutedBy = operatorName;
-
-        // Update WorkOrder jadi in_progress kalau masih pending
-        if (stepExecution.WorkOrder.Status == "pending")
-            stepExecution.WorkOrder.Status = "in_progress";
-
-        _db.ActivityLogs.Add(new ActivityLog
+        try
         {
-            WorkOrderId = stepExecution.WorkOrderId,
-            StepExecutionId = stepExecution.Id,
-            Action = "step_started",
-            Notes = $"Step {stepExecution.StepDefinition.Name} dimulai",
-            CreatedBy = operatorName,
-            CreatedAt = DateTime.UtcNow
-        });
+            var stepExecution = await _db.StepExecutions
+                .FromSqlRaw(
+                    @"SELECT * FROM ""StepExecutions"" 
+                      WHERE ""Id"" = {0} 
+                      FOR UPDATE", stepExecutionId)
+                .Include(se => se.StepDefinition)
+                .FirstOrDefaultAsync();
 
-        await _db.SaveChangesAsync();
+            if (stepExecution == null)
+                throw new KeyNotFoundException("Step tidak ditemukan");
+
+            await _db.Entry(stepExecution)
+                .Reference(se => se.WorkOrder)
+                .LoadAsync();
+
+            await _db.Entry(stepExecution.WorkOrder)
+                .Collection(wo => wo.StepExecutions)
+                .Query()
+                .Include(s => s.StepDefinition)
+                .LoadAsync();
+
+            if (stepExecution.WorkOrder.DeletedAt != null)
+                throw new InvalidOperationException("Work order sudah dihapus");
+
+            ValidateStepCanStart(stepExecution);
+
+            stepExecution.Status = StepStatus.InProgress;
+            stepExecution.StartedAt = DateTime.UtcNow;
+            stepExecution.ExecutedBy = operatorName;
+
+            if (stepExecution.WorkOrder.Status == WorkOrderStatus.Pending)
+                stepExecution.WorkOrder.Status = WorkOrderStatus.InProgress;
+
+            _db.ActivityLogs.Add(new ActivityLog
+            {
+                WorkOrderId = stepExecution.WorkOrderId,
+                StepExecutionId = stepExecution.Id,
+                Action = "step_started",
+                Notes = $"Step {stepExecution.StepDefinition.Name} dimulai",
+                CreatedBy = operatorName,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task FinishStepAsync(int stepExecutionId, string operatorName)
     {
-        var stepExecution = await GetStepExecutionWithContext(stepExecutionId);
+        await using var transaction = await _db.Database.BeginTransactionAsync();
 
-        if (stepExecution.Status != "in_progress")
-            throw new InvalidOperationException("Hanya step yang sedang berjalan yang bisa diselesaikan");
-
-        stepExecution.Status = "done";
-        stepExecution.CompletedAt = DateTime.UtcNow;
-
-        // Kalau ini step terakhir, tandai WorkOrder sebagai completed
-        var semuaStepSelesai = stepExecution.WorkOrder.StepExecutions
-            .All(s => s.Id == stepExecution.Id || s.Status == "done");
-
-        if (semuaStepSelesai)
-            stepExecution.WorkOrder.Status = "completed";
-
-        _db.ActivityLogs.Add(new ActivityLog
+        try
         {
-            WorkOrderId = stepExecution.WorkOrderId,
-            StepExecutionId = stepExecution.Id,
-            Action = "step_completed",
-            Notes = $"Step {stepExecution.StepDefinition.Name} selesai",
-            CreatedBy = operatorName,
-            CreatedAt = DateTime.UtcNow
-        });
+            var stepExecution = await GetStepExecutionWithContext(stepExecutionId);
 
-        await _db.SaveChangesAsync();
+            if (stepExecution.Status != StepStatus.InProgress)
+                throw new InvalidOperationException("Hanya step yang sedang berjalan yang bisa diselesaikan");
+
+            stepExecution.Status = StepStatus.Done;
+            stepExecution.CompletedAt = DateTime.UtcNow;
+
+            // Kalau semua step selesai, tandai WorkOrder completed
+            var semuaStepSelesai = stepExecution.WorkOrder.StepExecutions
+                .All(s => s.Id == stepExecution.Id || s.Status == StepStatus.Done);
+
+            if (semuaStepSelesai)
+                stepExecution.WorkOrder.Status = WorkOrderStatus.Completed;
+
+            _db.ActivityLogs.Add(new ActivityLog
+            {
+                WorkOrderId = stepExecution.WorkOrderId,
+                StepExecutionId = stepExecution.Id,
+                Action = "step_completed",
+                Notes = $"Step {stepExecution.StepDefinition.Name} selesai",
+                CreatedBy = operatorName,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task FailQcAsync(int stepExecutionId, string operatorName, string reason)
     {
-        var stepExecution = await GetStepExecutionWithContext(stepExecutionId);
+        await using var transaction = await _db.Database.BeginTransactionAsync();
 
-        if (stepExecution.StepDefinition.Name != "Quality Check")
-            throw new InvalidOperationException("Hanya step Quality Check yang bisa di-fail");
-
-        if (stepExecution.Status != "in_progress")
-            throw new InvalidOperationException("Quality Check harus dalam status in_progress untuk bisa gagal");
-
-        // Tandai QC sebagai failed
-        stepExecution.Status = "failed";
-        stepExecution.CompletedAt = DateTime.UtcNow;
-
-        // Reset Assembly supaya bisa dikerjain ulang
-        var assemblyStep = stepExecution.WorkOrder.StepExecutions
-            .FirstOrDefault(s => s.StepDefinition.Name == "Assembly")
-            ?? throw new Exception("Step Assembly tidak ditemukan");
-
-        assemblyStep.Status = "pending";
-        assemblyStep.StartedAt = null;
-        assemblyStep.CompletedAt = null;
-        assemblyStep.ExecutedBy = null;
-
-        _db.ActivityLogs.Add(new ActivityLog
+        try
         {
-            WorkOrderId = stepExecution.WorkOrderId,
-            StepExecutionId = stepExecution.Id,
-            Action = "qc_failed",
-            Notes = $"QC gagal: {reason}. Dikembalikan ke Assembly",
-            CreatedBy = operatorName,
-            CreatedAt = DateTime.UtcNow
-        });
+            var stepExecution = await GetStepExecutionWithContext(stepExecutionId);
 
-        await _db.SaveChangesAsync();
+            if (stepExecution.StepDefinition.Name != "Quality Check")
+                throw new InvalidOperationException("Hanya step Quality Check yang bisa di-fail");
+
+            if (stepExecution.Status != StepStatus.InProgress)
+                throw new InvalidOperationException("Quality Check harus dalam status in_progress untuk bisa gagal");
+
+            stepExecution.Status = StepStatus.Failed;
+            stepExecution.CompletedAt = DateTime.UtcNow;
+
+            // Cari step sebelum QC by order, bukan by name — lebih robust
+            var stepYangHarusDiulang = stepExecution.WorkOrder.StepExecutions
+                .FirstOrDefault(s => s.StepDefinition.Order == stepExecution.StepDefinition.Order - 1)
+                ?? throw new Exception("Step sebelum QC tidak ditemukan");
+
+            stepYangHarusDiulang.Status = StepStatus.Pending;
+            stepYangHarusDiulang.StartedAt = null;
+            stepYangHarusDiulang.CompletedAt = null;
+            stepYangHarusDiulang.ExecutedBy = null;
+
+            _db.ActivityLogs.Add(new ActivityLog
+            {
+                WorkOrderId = stepExecution.WorkOrderId,
+                StepExecutionId = stepExecution.Id,
+                Action = "qc_failed",
+                Notes = $"QC gagal: {reason}. Dikembalikan ke {stepYangHarusDiulang.StepDefinition.Name}",
+                CreatedBy = operatorName,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
-    // Ambil step beserta semua context yang dibutuhkan untuk validasi
     private async Task<StepExecution> GetStepExecutionWithContext(int stepExecutionId)
     {
         var stepExecution = await _db.StepExecutions
@@ -129,23 +182,19 @@ public class StepService : IStepService
 
     private static void ValidateStepCanStart(StepExecution stepExecution)
     {
-        if (stepExecution.Status != "pending")
+        if (stepExecution.Status != StepStatus.Pending)
             throw new InvalidOperationException("Step ini tidak bisa dimulai — statusnya bukan pending");
 
-        // Pastiin ga ada step lain yang lagi in_progress
         var adaStepAktif = stepExecution.WorkOrder.StepExecutions
-            .Any(s => s.Status == "in_progress");
+            .Any(s => s.Status == StepStatus.InProgress);
 
         if (adaStepAktif)
             throw new InvalidOperationException("Ada step lain yang sedang berjalan");
 
-        // Pastiin step sebelumnya udah selesai
-        var stepSebelumnya = stepExecution.WorkOrder.StepExecutions
-            .Where(s => s.StepDefinition.Order < stepExecution.StepDefinition.Order)
-            .ToList();
-
-        var adaStepSebelumnyaYangBelumSelesai = stepSebelumnya
-            .Any(s => s.Status != "done");
+        // Urutan dijaga by Order, bukan by nama step
+        var adaStepSebelumnyaYangBelumSelesai = stepExecution.WorkOrder.StepExecutions
+            .Any(s => s.StepDefinition.Order < stepExecution.StepDefinition.Order
+                   && s.Status != StepStatus.Done);
 
         if (adaStepSebelumnyaYangBelumSelesai)
             throw new InvalidOperationException("Step sebelumnya belum selesai");

@@ -1,17 +1,17 @@
 namespace MES.Core.Enums;
 
-public enum StepStatus
+public static class StepStatus
 {
-    Pending,
-    InProgress,
-    Done,
-    Failed
+    public const string Pending = "pending";
+    public const string InProgress = "in_progress";
+    public const string Done = "done";
+    public const string Failed = "failed";
 }
 
-public enum WorkOrderStatus
+public static class WorkOrderStatus
 {
-    Pending,
-    InProgress,
-    Completed,
-    Cancelled
+    public const string Pending = "pending";
+    public const string InProgress = "in_progress";
+    public const string Completed = "completed";
+    public const string Cancelled = "cancelled";
 }
