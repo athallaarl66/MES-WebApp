@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MES.API", "MES.API\MES.API.csproj", "{FCB10D96-CA3F-4E0E-81FF-93D77BA654FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MES.Core", "MES.Core\MES.Core.csproj", "{11D6D9CB-B975-452D-B4A3-8532285B271E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MES.Infrastructure", "MES.Infrastructure\MES.Infrastructure.csproj", "{C7878759-E769-4B88-8299-EAC9DE70108C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FCB10D96-CA3F-4E0E-81FF-93D77BA654FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCB10D96-CA3F-4E0E-81FF-93D77BA654FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCB10D96-CA3F-4E0E-81FF-93D77BA654FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCB10D96-CA3F-4E0E-81FF-93D77BA654FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11D6D9CB-B975-452D-B4A3-8532285B271E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11D6D9CB-B975-452D-B4A3-8532285B271E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11D6D9CB-B975-452D-B4A3-8532285B271E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11D6D9CB-B975-452D-B4A3-8532285B271E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7878759-E769-4B88-8299-EAC9DE70108C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7878759-E769-4B88-8299-EAC9DE70108C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7878759-E769-4B88-8299-EAC9DE70108C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7878759-E769-4B88-8299-EAC9DE70108C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
