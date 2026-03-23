@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MES.Core", "MES.Core\MES.Co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MES.Infrastructure", "MES.Infrastructure\MES.Infrastructure.csproj", "{C7878759-E769-4B88-8299-EAC9DE70108C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MES.Web", "MES.Web\MES.Web.csproj", "{C5CE0A3C-6134-48F9-8184-A060E49AAA1B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{C7878759-E769-4B88-8299-EAC9DE70108C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7878759-E769-4B88-8299-EAC9DE70108C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7878759-E769-4B88-8299-EAC9DE70108C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5CE0A3C-6134-48F9-8184-A060E49AAA1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5CE0A3C-6134-48F9-8184-A060E49AAA1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5CE0A3C-6134-48F9-8184-A060E49AAA1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5CE0A3C-6134-48F9-8184-A060E49AAA1B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
