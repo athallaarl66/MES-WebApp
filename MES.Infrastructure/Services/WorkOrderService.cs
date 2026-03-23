@@ -1,5 +1,6 @@
 using MES.Core.DTOs;
 using MES.Core.Entities;
+using MES.Core.Enums;
 using MES.Core.Interfaces;
 using MES.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -27,14 +28,14 @@ public class WorkOrderService : IWorkOrderService
             ProductName = request.ProductName,
             ProductCode = request.ProductCode,
             Quantity = request.Quantity,
-            Status = "pending",
+            Status = WorkOrderStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };
 
         workOrder.StepExecutions = stepDefinitions.Select(step => new StepExecution
         {
             StepDefinitionId = step.Id,
-            Status = "pending"
+            Status = StepStatus.Pending
         }).ToList();
 
         _db.WorkOrders.Add(workOrder);
@@ -92,8 +93,8 @@ public class WorkOrderService : IWorkOrderService
                 CompletedAt = se.CompletedAt
             }).ToList();
 
-        var currentStep = steps.FirstOrDefault(s => s.Status == "in_progress")
-            ?? steps.FirstOrDefault(s => s.Status == "pending");
+        var currentStep = steps.FirstOrDefault(s => s.Status == StepStatus.InProgress)
+            ?? steps.FirstOrDefault(s => s.Status == StepStatus.Pending);
 
         return new WorkOrderResponse
         {
