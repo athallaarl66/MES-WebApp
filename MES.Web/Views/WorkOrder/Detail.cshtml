@@ -1,0 +1,174 @@
+@model MES.Web.Models.WorkOrderViewModel
+
+@{
+    ViewData["Title"] = $"Detail Work Order {Model.OrderNumber}";
+}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0 fw-semibold">Detail Work Order</h5>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+    </div>
+
+    <div class="row g-4">
+
+        {{!-- Info Work Order --}}
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-dark text-white py-3">
+                    <h6 class="mb-0">Informasi Work Order</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted small">Order Number</td>
+                            <td class="fw-semibold">@Model.OrderNumber</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Produk</td>
+                            <td>@Model.ProductName</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Kode</td>
+                            <td>@Model.ProductCode</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Quantity</td>
+                            <td>@Model.Quantity</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Status</td>
+                            <td>
+                                <span class="badge @GetStatusBadge(Model.Status)">
+                                    @Model.Status
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Step Saat Ini</td>
+                            <td>@Model.CurrentStep</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Dibuat</td>
+                            <td class="small">
+                                @Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Step Produksi --}}
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark text-white py-3">
+                    <h6 class="mb-0">Step Produksi</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Step</th>
+                                <th>Status</th>
+                                <th>Operator</th>
+                                <th>Mulai</th>
+                                <th>Selesai</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var step in Model.Steps)
+                            {
+                                <tr class="@(step.Status == "in_progress" ? "table-warning" : "")">
+                                    <td class="fw-semibold">@step.StepName</td>
+                                    <td>
+                                        <span class="badge @GetStepBadge(step.Status)">
+                                            @step.Status
+                                        </span>
+                                    </td>
+                                    <td class="text-muted small">@(step.ExecutedBy ?? "-")</td>
+                                    <td class="text-muted small">
+                                        @(step.StartedAt.HasValue
+                                            ? step.StartedAt.Value.ToLocalTime().ToString("dd MMM HH:mm")
+                                            : "-")
+                                    </td>
+                                    <td class="text-muted small">
+                                        @(step.CompletedAt.HasValue
+                                            ? step.CompletedAt.Value.ToLocalTime().ToString("dd MMM HH:mm")
+                                            : "-")
+                                    </td>
+                                    <td>
+                                        @if (step.Status == "pending")
+                                        {
+                                            <form asp-controller="Step" asp-action="Start"
+                                                  method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="workOrderId" value="@Model.Id" />
+                                                <button type="submit" name="stepExecutionId"
+                                                        value="@step.Id"
+                                                        class="btn btn-outline-primary btn-sm">
+                                                    Start
+                                                </button>
+                                            </form>
+                                        }
+                                        else if (step.Status == "in_progress")
+                                        {
+                                            <form asp-controller="Step" asp-action="Finish"
+                                                  method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="workOrderId" value="@Model.Id" />
+                                                <button type="submit" name="stepExecutionId"
+                                                        value="@step.Id"
+                                                        class="btn btn-outline-success btn-sm">
+                                                    Finish
+                                                </button>
+                                            </form>
+
+                                            @if (step.StepName == "Quality Check")
+                                            {
+                                                <form asp-controller="Step" asp-action="FailQc"
+                                                      method="post" class="d-inline ms-1">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="workOrderId" value="@Model.Id" />
+                                                    <input type="hidden" name="reason" value="QC tidak lolos" />
+                                                    <button type="submit" name="stepExecutionId"
+                                                            value="@step.Id"
+                                                            class="btn btn-outline-danger btn-sm">
+                                                        Fail QC
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@functions {
+    string GetStatusBadge(string status) => status switch
+    {
+        "pending"     => "bg-secondary",
+        "in_progress" => "bg-primary",
+        "completed"   => "bg-success",
+        "cancelled"   => "bg-danger",
+        _             => "bg-secondary"
+    };
+
+    string GetStepBadge(string status) => status switch
+    {
+        "pending"     => "bg-secondary",
+        "in_progress" => "bg-warning text-dark",
+        "done"        => "bg-success",
+        "failed"      => "bg-danger",
+        _             => "bg-secondary"
+    };
+}
