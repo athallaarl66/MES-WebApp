@@ -79,34 +79,44 @@ public class WorkOrderService : IWorkOrderService
     }
 
     private static WorkOrderResponse MapToResponse(WorkOrder workOrder)
-    {
-        var steps = workOrder.StepExecutions
-            .OrderBy(se => se.StepDefinition.Order)
-            .Select(se => new StepExecutionResponse
-            {
-                Id = se.Id,
-                StepName = se.StepDefinition.Name,
-                StepOrder = se.StepDefinition.Order,
-                Status = se.Status,
-                ExecutedBy = se.ExecutedBy,
-                StartedAt = se.StartedAt,
-                CompletedAt = se.CompletedAt
-            }).ToList();
-
-        var currentStep = steps.FirstOrDefault(s => s.Status == StepStatus.InProgress)
-            ?? steps.FirstOrDefault(s => s.Status == StepStatus.Pending);
-
-        return new WorkOrderResponse
+{
+    var steps = workOrder.StepExecutions
+        .OrderBy(se => se.StepDefinition.Order)
+        .Select(se => new StepExecutionResponse
         {
-            Id = workOrder.Id,
-            OrderNumber = workOrder.OrderNumber,
-            ProductName = workOrder.ProductName,
-            ProductCode = workOrder.ProductCode,
-            Quantity = workOrder.Quantity,
-            Status = workOrder.Status,
-            CreatedAt = workOrder.CreatedAt,
-            CurrentStep = currentStep?.StepName ?? "Completed",
-            Steps = steps
-        };
-    }
+            Id = se.Id,
+            StepName = se.StepDefinition.Name,
+            StepOrder = se.StepDefinition.Order,
+            Status = se.Status,
+            ExecutedBy = se.ExecutedBy,
+            StartedAt = se.StartedAt,
+            CompletedAt = se.CompletedAt
+        }).ToList();
+
+    // tentuin step mana yang valid untuk distart
+    var stepBerikutnya = steps
+        .Where(s => s.Status == StepStatus.Pending)
+        .FirstOrDefault(s => steps
+            .Where(prev => prev.StepOrder < s.StepOrder)
+            .All(prev => prev.Status == StepStatus.Done || prev.Status == StepStatus.Failed));
+
+    if (stepBerikutnya != null)
+        stepBerikutnya.CanStart = true;
+
+    var currentStep = steps.FirstOrDefault(s => s.Status == StepStatus.InProgress)
+        ?? steps.FirstOrDefault(s => s.Status == StepStatus.Pending);
+
+    return new WorkOrderResponse
+    {
+        Id = workOrder.Id,
+        OrderNumber = workOrder.OrderNumber,
+        ProductName = workOrder.ProductName,
+        ProductCode = workOrder.ProductCode,
+        Quantity = workOrder.Quantity,
+        Status = workOrder.Status,
+        CreatedAt = workOrder.CreatedAt,
+        CurrentStep = currentStep?.StepName ?? "Completed",
+        Steps = steps
+    };
+}
 }

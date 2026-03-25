@@ -21,8 +21,7 @@ public class WorkOrderResponse
     public string CurrentStep { get; set; } = string.Empty;
     public List<StepExecutionResponse> Steps { get; set; } = [];
 }
- 
-public class StepExecutionResponse
+ public class StepExecutionResponse
 {
     public int Id { get; set; }
     public string StepName { get; set; } = string.Empty;
@@ -31,4 +30,5 @@ public class StepExecutionResponse
     public string? ExecutedBy { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public bool CanStart { get; set; }  // backend yang tentuin, bukan View
 }

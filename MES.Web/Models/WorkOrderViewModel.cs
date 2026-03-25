@@ -22,6 +22,7 @@ public class StepExecutionViewModel
     public string? ExecutedBy { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public bool CanStart { get; set; }
 }
 
 public class CreateWorkOrderViewModel
@@ -30,4 +31,11 @@ public class CreateWorkOrderViewModel
     public string ProductName { get; set; } = string.Empty;
     public string ProductCode { get; set; } = string.Empty;
     public int Quantity { get; set; }
+}
+
+public class ApiResponse<T>
+{
+    public bool Success { get; set; }
+    public string? Message { get; set; }
+    public T? Data { get; set; }
 }

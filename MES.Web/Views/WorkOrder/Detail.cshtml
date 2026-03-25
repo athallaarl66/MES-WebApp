@@ -13,7 +13,6 @@
 
     <div class="row g-4">
 
-        {{!-- Info Work Order --}}
         <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-dark text-white py-3">
@@ -60,7 +59,6 @@
             </div>
         </div>
 
-        {{!-- Step Produksi --}}
         <div class="col-md-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-dark text-white py-3">
@@ -100,20 +98,7 @@
                                             : "-")
                                     </td>
                                     <td>
-                                        @if (step.Status == "pending")
-                                        {
-                                            <form asp-controller="Step" asp-action="Start"
-                                                  method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="workOrderId" value="@Model.Id" />
-                                                <button type="submit" name="stepExecutionId"
-                                                        value="@step.Id"
-                                                        class="btn btn-outline-primary btn-sm">
-                                                    Start
-                                                </button>
-                                            </form>
-                                        }
-                                        else if (step.Status == "in_progress")
+                                        @if (step.Status == "in_progress")
                                         {
                                             <form asp-controller="Step" asp-action="Finish"
                                                   method="post" class="d-inline">
@@ -140,6 +125,19 @@
                                                     </button>
                                                 </form>
                                             }
+                                        }
+                                        else if (step.CanStart)
+                                        {
+                                            <form asp-controller="Step" asp-action="Start"
+                                                  method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="workOrderId" value="@Model.Id" />
+                                                <button type="submit" name="stepExecutionId"
+                                                        value="@step.Id"
+                                                        class="btn btn-outline-primary btn-sm">
+                                                    Start
+                                                </button>
+                                            </form>
                                         }
                                     </td>
                                 </tr>
