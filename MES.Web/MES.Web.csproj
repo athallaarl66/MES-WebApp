@@ -10,4 +10,8 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MES.Core\MES.Core.csproj" />
+  </ItemGroup>
+
 </Project>

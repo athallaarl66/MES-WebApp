@@ -29,6 +29,21 @@ public class WorkOrdersController : ControllerBase
         }
     }
 
+    // Harus sebelum {id} — biar "summary" ga diparse sebagai id
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetSummary()
+    {
+        try
+        {
+            var summary = await _workOrderService.GetSummaryAsync();
+            return Ok(new { success = true, message = "OK", data = summary });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { success = false, message = "Gagal mengambil summary work order" });
+        }
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -51,7 +66,6 @@ public class WorkOrdersController : ControllerBase
     {
         try
         {
-            // Sementara hardcode operator, nanti diganti setelah auth ditambah
             var workOrder = await _workOrderService.CreateWorkOrderAsync(request, "operator");
             return CreatedAtAction(nameof(GetById), new { id = workOrder.Id }, new { success = true, data = workOrder });
         }

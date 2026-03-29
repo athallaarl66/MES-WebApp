@@ -32,3 +32,12 @@ public class WorkOrderResponse
     public DateTime? CompletedAt { get; set; }
     public bool CanStart { get; set; }  // backend yang tentuin, bukan View
 }
+
+public class WorkOrderSummaryDto
+{
+    public int Total { get; set; }
+    public int Pending { get; set; }
+    public int InProgress { get; set; }
+    public int Completed { get; set; }
+    public int Cancelled { get; set; }
+}

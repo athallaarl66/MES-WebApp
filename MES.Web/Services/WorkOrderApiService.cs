@@ -1,5 +1,6 @@
-using System.Net.Http.Json;
+using MES.Core.DTOs;
 using MES.Web.Models;
+using System.Net.Http.Json;
 
 namespace MES.Web.Services;
 
@@ -15,32 +16,32 @@ public class WorkOrderApiService : IWorkOrderApiService
     }
 
     public async Task<List<WorkOrderViewModel>> GetAllWorkOrdersAsync()
-{
-    try
     {
-        var result = await _http.GetFromJsonAsync<ApiResponse<List<WorkOrderViewModel>>>("/api/work-orders");
-        return result?.Data ?? [];
+        try
+        {
+            var result = await _http.GetFromJsonAsync<ApiResponse<List<WorkOrderViewModel>>>("/api/work-orders");
+            return result?.Data ?? [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Gagal mengambil daftar work order dari API");
+            return [];
+        }
     }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Gagal mengambil daftar work order dari API");
-        return [];
-    }
-}
 
     public async Task<WorkOrderViewModel?> GetWorkOrderByIdAsync(int id)
-{
-    try
     {
-        var result = await _http.GetFromJsonAsync<ApiResponse<WorkOrderViewModel>>($"/api/work-orders/{id}");
-        return result?.Data;
+        try
+        {
+            var result = await _http.GetFromJsonAsync<ApiResponse<WorkOrderViewModel>>($"/api/work-orders/{id}");
+            return result?.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Gagal mengambil work order {Id} dari API", id);
+            return null;
+        }
     }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Gagal mengambil work order {Id} dari API", id);
-        return null;
-    }
-}
 
     public async Task<bool> CreateWorkOrderAsync(CreateWorkOrderViewModel model)
     {
@@ -104,6 +105,22 @@ public class WorkOrderApiService : IWorkOrderApiService
         {
             _logger.LogError(ex, "Gagal fail QC step {Id}", stepExecutionId);
             return false;
+        }
+    }
+
+    public async Task<WorkOrderSummaryDto?> GetSummaryAsync()
+    {
+        try
+        {
+            var result = await _http.GetFromJsonAsync<ApiResponse<WorkOrderSummaryDto>>(
+                "/api/work-orders/summary"
+            );
+            return result?.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Gagal mengambil summary work order");
+            return null;
         }
     }
 }

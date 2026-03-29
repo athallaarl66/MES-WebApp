@@ -78,6 +78,28 @@ public class WorkOrderService : IWorkOrderService
         return workOrders.Select(MapToResponse).ToList();
     }
 
+public async Task<WorkOrderSummaryDto> GetSummaryAsync()
+{
+    // Satu query, group by status — ga mau N query
+    var counts = await _db.WorkOrders
+        .Where(wo => wo.DeletedAt == null)
+        .GroupBy(wo => wo.Status)
+        .Select(g => new { Status = g.Key, Count = g.Count() })
+        .ToListAsync();
+
+    // Default 0 kalau status itu ga ada di DB
+    int Get(string status) =>
+        counts.FirstOrDefault(c => c.Status == status)?.Count ?? 0;
+
+    return new WorkOrderSummaryDto
+    {
+        Total      = counts.Sum(c => c.Count),
+        Pending    = Get(WorkOrderStatus.Pending),
+        InProgress = Get(WorkOrderStatus.InProgress),
+        Completed  = Get(WorkOrderStatus.Completed),
+        Cancelled  = Get(WorkOrderStatus.Cancelled)
+    };
+}
     private static WorkOrderResponse MapToResponse(WorkOrder workOrder)
 {
     var steps = workOrder.StepExecutions

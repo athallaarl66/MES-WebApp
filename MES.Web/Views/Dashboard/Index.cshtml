@@ -1,0 +1,57 @@
+@using MES.Core.DTOs
+@model WorkOrderSummaryDto
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid px-4 py-3">
+    <h4 class="mb-4 fw-semibold">Dashboard</h4>
+
+    @if (Model == null)
+    {
+        <div class="alert alert-warning">Gagal memuat data summary.</div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="fs-2 fw-bold">@Model.Total</div>
+                        <div class="text-muted small">Total</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="fs-2 fw-bold text-secondary">@Model.Pending</div>
+                        <div class="text-muted small">Pending</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="fs-2 fw-bold text-primary">@Model.InProgress</div>
+                        <div class="text-muted small">In Progress</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="fs-2 fw-bold text-success">@Model.Completed</div>
+                        <div class="text-muted small">Completed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <a asp-controller="WorkOrder" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                Lihat Semua Work Order →
+            </a>
+        </div>
+    }
+</div>
