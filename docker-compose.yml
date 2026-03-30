@@ -1,0 +1,41 @@
+services:
+  mes-api:
+    build:
+      context: .
+      dockerfile: MES.API/Dockerfile
+    container_name: mes-api
+    restart: always
+    ports:
+      - "5096:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  mes-web:
+    build:
+      context: .
+      dockerfile: MES.Web/Dockerfile
+    container_name: mes-web
+    restart: always
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ApiSettings__BaseUrl=http://mes-api:8080
+    depends_on:
+      mes-api:
+        condition: service_healthy
