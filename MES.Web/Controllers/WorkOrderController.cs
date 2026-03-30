@@ -1,3 +1,4 @@
+using MES.Core.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using MES.Web.Models;
 using MES.Web.Services;
@@ -6,40 +7,35 @@ namespace MES.Web.Controllers;
 
 public class WorkOrderController : Controller
 {
-    private readonly IWorkOrderApiService _workOrderService;
+    private readonly IWorkOrderApiService _workOrderApi;
     private readonly ILogger<WorkOrderController> _logger;
 
-    public WorkOrderController(IWorkOrderApiService workOrderService, ILogger<WorkOrderController> logger)
+    public WorkOrderController(IWorkOrderApiService workOrderApi, ILogger<WorkOrderController> logger)
     {
-        _workOrderService = workOrderService;
+        _workOrderApi = workOrderApi;
         _logger = logger;
     }
 
-    // GET /work-order
     public async Task<IActionResult> Index()
     {
-        var workOrders = await _workOrderService.GetAllWorkOrdersAsync();
+        var workOrders = await _workOrderApi.GetAllWorkOrdersAsync();
         return View(workOrders);
     }
 
-    // GET /work-order/{id}
     public async Task<IActionResult> Detail(int id)
     {
-        var workOrder = await _workOrderService.GetWorkOrderByIdAsync(id);
-
+        var workOrder = await _workOrderApi.GetWorkOrderByIdAsync(id);
         if (workOrder == null)
             return NotFound();
 
         return View(workOrder);
     }
 
-    // GET /work-order/create
     public IActionResult Create()
     {
         return View();
     }
 
-    // POST /work-order/create
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateWorkOrderViewModel model)
@@ -47,8 +43,7 @@ public class WorkOrderController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        var success = await _workOrderService.CreateWorkOrderAsync(model);
-
+        var success = await _workOrderApi.CreateWorkOrderAsync(model);
         if (!success)
         {
             ModelState.AddModelError(string.Empty, "Gagal membuat work order, coba lagi");
@@ -56,5 +51,19 @@ public class WorkOrderController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Logs(int id)
+    {
+        var workOrder = await _workOrderApi.GetWorkOrderByIdAsync(id);
+        if (workOrder == null)
+        {
+            TempData["Error"] = "Work order tidak ditemukan";
+            return RedirectToAction("Index");
+        }
+
+        var logs = await _workOrderApi.GetActivityLogsAsync(id) ?? [];
+        ViewBag.WorkOrder = workOrder;
+        return View(logs);
     }
 }

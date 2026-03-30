@@ -58,6 +58,7 @@ public class StepService : IStepService
             {
                 WorkOrderId = stepExecution.WorkOrderId,
                 StepExecutionId = stepExecution.Id,
+                StepName = stepExecution.StepDefinition.Name,
                 Action = "step_started",
                 Notes = $"Step {stepExecution.StepDefinition.Name} dimulai",
                 CreatedBy = operatorName,
@@ -99,6 +100,7 @@ public class StepService : IStepService
             {
                 WorkOrderId = stepExecution.WorkOrderId,
                 StepExecutionId = stepExecution.Id,
+                StepName = stepExecution.StepDefinition.Name,  
                 Action = "step_completed",
                 Notes = $"Step {stepExecution.StepDefinition.Name} selesai",
                 CreatedBy = operatorName,
@@ -146,6 +148,7 @@ public class StepService : IStepService
             {
                 WorkOrderId = stepExecution.WorkOrderId,
                 StepExecutionId = stepExecution.Id,
+                StepName = stepExecution.StepDefinition.Name,
                 Action = "qc_failed",
                 Notes = $"QC gagal: {reason}. Dikembalikan ke {stepYangHarusDiulang.StepDefinition.Name}",
                 CreatedBy = operatorName,

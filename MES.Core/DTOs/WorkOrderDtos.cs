@@ -41,3 +41,13 @@ public class WorkOrderSummaryDto
     public int Completed { get; set; }
     public int Cancelled { get; set; }
 }
+
+public class ActivityLogDto
+{
+    public int Id { get; set; }
+    public string? StepName { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}

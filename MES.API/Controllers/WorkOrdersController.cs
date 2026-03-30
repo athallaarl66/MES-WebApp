@@ -29,7 +29,6 @@ public class WorkOrdersController : ControllerBase
         }
     }
 
-    // Harus sebelum {id} — biar "summary" ga diparse sebagai id
     [HttpGet("summary")]
     public async Task<IActionResult> GetSummary()
     {
@@ -44,7 +43,7 @@ public class WorkOrdersController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         try
@@ -58,6 +57,24 @@ public class WorkOrdersController : ControllerBase
         catch (Exception)
         {
             return StatusCode(500, new { success = false, message = "Gagal mengambil data work order" });
+        }
+    }
+
+    [HttpGet("{id:int}/logs")]
+    public async Task<IActionResult> GetLogs(int id)
+    {
+        try
+        {
+            var workOrder = await _workOrderService.GetWorkOrderByIdAsync(id);
+            if (workOrder == null)
+                return NotFound(new { success = false, message = "Work order tidak ditemukan" });
+
+            var logs = await _workOrderService.GetActivityLogsAsync(id);
+            return Ok(new { success = true, message = "OK", data = logs });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { success = false, message = "Gagal mengambil activity log" });
         }
     }
 

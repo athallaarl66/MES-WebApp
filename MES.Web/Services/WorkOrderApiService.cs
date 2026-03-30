@@ -123,4 +123,20 @@ public class WorkOrderApiService : IWorkOrderApiService
             return null;
         }
     }
+
+    public async Task<List<ActivityLogDto>?> GetActivityLogsAsync(int workOrderId)
+    {
+        try
+        {
+            var result = await _http.GetFromJsonAsync<ApiResponse<List<ActivityLogDto>>>(
+                $"/api/work-orders/{workOrderId}/logs"
+            );
+            return result?.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Gagal mengambil activity log work order {Id}", workOrderId);
+            return null;
+        }
+    }
 }

@@ -8,5 +8,6 @@ public interface IWorkOrderService
     Task<WorkOrderResponse?> GetWorkOrderByIdAsync(int id);
     Task<List<WorkOrderResponse>> GetAllWorkOrdersAsync();
     Task<WorkOrderSummaryDto> GetSummaryAsync();
+    Task<List<ActivityLogDto>> GetActivityLogsAsync(int workOrderId);
 
 }

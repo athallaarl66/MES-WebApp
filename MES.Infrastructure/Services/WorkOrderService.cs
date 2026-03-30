@@ -100,6 +100,26 @@ public async Task<WorkOrderSummaryDto> GetSummaryAsync()
         Cancelled  = Get(WorkOrderStatus.Cancelled)
     };
 }
+
+public async Task<List<ActivityLogDto>> GetActivityLogsAsync(int workOrderId)
+{
+    var logs = await _db.ActivityLogs
+        .Where(l => l.WorkOrderId == workOrderId)
+        .OrderByDescending(l => l.CreatedAt)
+        .Select(l => new ActivityLogDto
+        {
+            Id = l.Id,
+            StepName = l.StepName,
+            Action = l.Action,
+            Notes = l.Notes,
+            CreatedBy = l.CreatedBy,
+            CreatedAt = l.CreatedAt
+        })
+        .ToListAsync();
+
+    return logs;
+}
+
     private static WorkOrderResponse MapToResponse(WorkOrder workOrder)
 {
     var steps = workOrder.StepExecutions

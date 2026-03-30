@@ -1,0 +1,91 @@
+@using MES.Core.DTOs
+@model List<ActivityLogDto>
+
+@{
+    var workOrder = ViewBag.WorkOrder as MES.Web.Models.WorkOrderViewModel;
+    ViewData["Title"] = $"Activity Log - {workOrder?.OrderNumber}";
+}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="fw-semibold mb-0">Activity Log</h5>
+            <small class="text-muted">@workOrder?.OrderNumber · @workOrder?.ProductName</small>
+        </div>
+        <a asp-action="Detail" asp-route-id="@workOrder?.Id"
+           class="btn btn-outline-secondary btn-sm">← Kembali</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="text-muted mb-2" style="font-size: 2rem;">📋</div>
+                <p class="text-muted mb-0">Belum ada aktivitas tercatat.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-dark text-white py-3 d-flex justify-content-between">
+                <h6 class="mb-0">Log Aktivitas</h6>
+                <small class="text-white-50">@Model.Count entri</small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Step</th>
+                            <th>Action</th>
+                            <th>Notes</th>
+                            <th>Operator</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="text-muted small" style="white-space:nowrap">
+                                    @log.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm:ss")
+                                </td>
+                                <td class="small">
+                                    @(log.StepName ?? "-")
+                                </td>
+                                <td>
+                                    <span class="badge @GetActionClass(log.Action)">
+                                        @GetActionLabel(log.Action)
+                                    </span>
+                                </td>
+                                <td class="text-muted small">@(log.Notes ?? "-")</td>
+                                <td class="small fw-semibold">@log.CreatedBy</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@functions {
+    string GetActionClass(string action) => action switch
+    {
+        "step_started"      => "badge-in-progress",
+        "step_completed"    => "badge-done",
+        "qc_failed"         => "badge-failed",
+        "work_order_created"=> "badge-pending",
+        _                   => "badge-pending"
+    };
+
+    string GetActionLabel(string action) => action switch
+    {
+        "step_started"      => "Step Started",
+        "step_completed"    => "Step Completed",
+        "qc_failed"         => "QC Failed",
+        "work_order_created"=> "WO Created",
+        _                   => action
+    };
+}

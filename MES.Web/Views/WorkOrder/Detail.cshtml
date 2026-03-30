@@ -11,7 +11,11 @@
             <h5 class="mb-0 fw-semibold">@Model.OrderNumber</h5>
             <small class="text-muted">@Model.ProductName · @Model.ProductCode</small>
         </div>
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+        <div> class="d-flex gap-2">
+            <a asp-action="Logs" asp-route-id="@Model.Id"
+                class="btn btn-outline-secondary btn-sm">📋 Activity Log</a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+        </div>
     </div>
 
     <div class="row g-4">
