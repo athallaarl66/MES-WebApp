@@ -23,6 +23,8 @@ public class StepExecutionViewModel
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public bool CanStart { get; set; }
+    public bool CanPassQc { get; set; }
+    public bool CanFailQc { get; set; }
 }
 
 public class CreateWorkOrderViewModel

@@ -20,19 +20,11 @@ public class StepsController : ControllerBase
         try
         {
             await _stepService.StartStepAsync(id, "operator");
-            return Ok(new { success = true, message = "Step berhasil dimulai" });
+            return BuildSuccess("Step berhasil dimulai");
         }
-        catch (KeyNotFoundException ex)
+        catch (Exception ex)
         {
-            return NotFound(new { success = false, message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch
-        {
-            return StatusCode(500, new { success = false, message = "Gagal memulai step" });
+            return HandleException(ex);
         }
     }
 
@@ -42,64 +34,86 @@ public class StepsController : ControllerBase
         try
         {
             await _stepService.FinishStepAsync(id, "operator");
-            return Ok(new { success = true, message = "Step berhasil diselesaikan" });
+            return BuildSuccess("Step berhasil diselesaikan");
         }
-        catch (KeyNotFoundException ex)
+        catch (Exception ex)
         {
-            return NotFound(new { success = false, message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch
-        {
-            return StatusCode(500, new { success = false, message = "Gagal menyelesaikan step" });
+            return HandleException(ex);
         }
     }
 
     [HttpPost("{id}/fail-qc")]
     public async Task<IActionResult> FailQc(int id, [FromBody] FailQcRequest request)
     {
+        // Validasi payload (sesuai rule: Inline validation, tapi di BE kita pastikan data tidak kosong)
+        if (string.IsNullOrWhiteSpace(request?.Reason))
+        {
+            return BuildError(400, "Alasan QC gagal wajib diisi.", "VALIDATION_ERROR");
+        }
+
         try
         {
             await _stepService.FailQcAsync(id, "operator", request.Reason);
-            return Ok(new { success = true, message = "QC gagal, ulang dari awal" });
+            return BuildSuccess("QC gagal, step dikembalikan ke Assembly.");
         }
-        catch (KeyNotFoundException ex)
+        catch (Exception ex)
         {
-            return NotFound(new { success = false, message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch
-        {
-            return StatusCode(500, new { success = false, message = "Gagal memproses QC" });
+            return HandleException(ex);
         }
     }
 
     [HttpPost("{id}/pass-qc")]
     public async Task<IActionResult> PassQc(int id)
     {
-        try
+    try
         {
-            await _stepService.PassQcAsync(id, "operator");
-            return Ok(new { success = true, message = "QC berhasil" });
+            await _stepService.PassQcAsync(id, "operator"); 
+            return BuildSuccess("QC berhasil divalidasi.");
         }
-        catch (KeyNotFoundException ex)
+            catch (Exception ex)
         {
-            return NotFound(new { success = false, message = ex.Message });
+            return HandleException(ex);
         }
-        catch (InvalidOperationException ex)
+    }
+
+    // ========================================================================
+    // HELPER METHODS: Agar API Response selalu seragam sesuai standard rules.
+    // ========================================================================
+
+    private IActionResult BuildSuccess(string message, object data = null)
+    {
+        return Ok(new
         {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch
+            success = true,
+            message = message,
+            data = data
+        });
+    }
+
+    private IActionResult BuildError(int statusCode, string message, string errorCode)
+    {
+        return StatusCode(statusCode, new
         {
-            return StatusCode(500, new { success = false, message = "Gagal memproses QC" });
-        }
+            success = false,
+            message = message,
+            errorCode = errorCode,
+            data = (object)null
+        });
+    }
+
+    private IActionResult HandleException(Exception ex)
+    {
+        // Pengecekan tipe error untuk sanitasi pesan (Safe for user)
+        return ex switch
+        {
+            KeyNotFoundException => BuildError(404, "Data step tidak ditemukan.", "NOT_FOUND"),
+            
+            // InvalidOperationException biasanya berisi pesan validasi dari Service yang aman dibaca user
+            InvalidOperationException invalidEx => BuildError(400, invalidEx.Message, "INVALID_STATE"),
+            
+            // Catch-all untuk error yang tidak terduga, jangan bocorin internal server error
+            _ => BuildError(500, "Terjadi kesalahan pada sistem saat memproses request.", "SERVER_ERROR")
+        };
     }
 }
 
