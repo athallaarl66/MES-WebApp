@@ -6,36 +6,46 @@
     ViewData["Title"] = $"Activity Log - {workOrder?.OrderNumber}";
 }
 
-<div class="container-fluid py-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
+    <div class="container-fluid px-0 d-flex justify-content-between align-items-center">
         <div>
-            <h5 class="fw-semibold mb-0">Activity Log</h5>
-            <small class="text-muted">@workOrder?.OrderNumber · @workOrder?.ProductName</small>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a asp-controller="WorkOrder" asp-action="Index"
+                   style="color:#94a3b8;font-size:0.8rem;text-decoration:none">Work Orders</a>
+                <span style="color:#cbd5e1;font-size:0.8rem">/</span>
+                <a asp-action="Detail" asp-route-id="@workOrder?.Id"
+                   style="color:#94a3b8;font-size:0.8rem;text-decoration:none">@workOrder?.OrderNumber</a>
+                <span style="color:#cbd5e1;font-size:0.8rem">/</span>
+                <span style="font-size:0.8rem;color:#64748b">Activity Log</span>
+            </div>
+            <h5>Activity Log</h5>
+            <div class="subtitle">@workOrder?.OrderNumber &middot; @workOrder?.ProductName</div>
         </div>
         <a asp-action="Detail" asp-route-id="@workOrder?.Id"
-           class="btn btn-outline-secondary btn-sm">← Kembali</a>
+           class="btn btn-outline-dark btn-sm">← Kembali</a>
     </div>
+</div>
 
+<div class="container-fluid px-4">
     @if (!Model.Any())
     {
-        <div class="card border-0 shadow-sm">
+        <div class="card">
             <div class="card-body text-center py-5">
-                <div class="text-muted mb-2" style="font-size: 2rem;">📋</div>
-                <p class="text-muted mb-0">Belum ada aktivitas tercatat.</p>
+                <div style="font-size:2rem;margin-bottom:0.75rem">📋</div>
+                <div class="text-muted">Belum ada aktivitas tercatat.</div>
             </div>
         </div>
     }
     else
     {
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-dark text-white py-3 d-flex justify-content-between">
-                <h6 class="mb-0">Log Aktivitas</h6>
-                <small class="text-white-50">@Model.Count entri</small>
+        <div class="card">
+            <div class="card-header px-4 py-3 d-flex justify-content-between align-items-center" style="background:#fff">
+                <span>Log Aktivitas</span>
+                <span style="font-size:0.75rem;color:#94a3b8">@Model.Count entri</span>
             </div>
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light">
+                <table class="table mb-0">
+                    <thead>
                         <tr>
                             <th>Waktu</th>
                             <th>Step</th>
@@ -48,19 +58,17 @@
                         @foreach (var log in Model)
                         {
                             <tr>
-                                <td class="text-muted small" style="white-space:nowrap">
+                                <td style="color:#94a3b8;font-size:0.8rem;white-space:nowrap">
                                     @log.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm:ss")
                                 </td>
-                                <td class="small">
-                                    @(log.StepName ?? "-")
-                                </td>
+                                <td style="color:#64748b;font-size:0.875rem">@(log.StepName ?? "—")</td>
                                 <td>
                                     <span class="badge @GetActionClass(log.Action)">
                                         @GetActionLabel(log.Action)
                                     </span>
                                 </td>
-                                <td class="text-muted small">@(log.Notes ?? "-")</td>
-                                <td class="small fw-semibold">@log.CreatedBy</td>
+                                <td style="color:#64748b;font-size:0.875rem">@(log.Notes ?? "—")</td>
+                                <td class="fw-semibold" style="font-size:0.875rem">@log.CreatedBy</td>
                             </tr>
                         }
                     </tbody>
@@ -73,19 +81,18 @@
 @functions {
     string GetActionClass(string action) => action switch
     {
-        "step_started"      => "badge-in-progress",
-        "step_completed"    => "badge-done",
-        "qc_failed"         => "badge-failed",
-        "work_order_created"=> "badge-pending",
-        _                   => "badge-pending"
+        "step_started"       => "badge-in-progress",
+        "step_completed"     => "badge-done",
+        "qc_failed"          => "badge-failed",
+        "work_order_created" => "badge-pending",
+        _                    => "badge-pending"
     };
-
     string GetActionLabel(string action) => action switch
     {
-        "step_started"      => "Step Started",
-        "step_completed"    => "Step Completed",
-        "qc_failed"         => "QC Failed",
-        "work_order_created"=> "WO Created",
-        _                   => action
+        "step_started"       => "Step Started",
+        "step_completed"     => "Step Completed",
+        "qc_failed"          => "QC Failed",
+        "work_order_created" => "WO Created",
+        _                    => action
     };
 }

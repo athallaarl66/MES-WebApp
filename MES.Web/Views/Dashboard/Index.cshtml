@@ -1,63 +1,123 @@
 @using MES.Core.DTOs
-@model WorkOrderSummaryDto
+@using MES.Web.Models
 
 @{
     ViewData["Title"] = "Dashboard";
+    var summary = ViewBag.Summary as WorkOrderSummaryDto;
+    var recent = ViewBag.RecentWorkOrders as List<WorkOrderViewModel> ?? [];
 }
 
-<div class="container-fluid py-4">
-
-    <div class="mb-4">
-        <h5 class="fw-semibold mb-0">Dashboard</h5>
-        <small class="text-muted">Overview sistem produksi</small>
+<div class="page-header">
+    <div class="container-fluid px-0">
+        <h5>Dashboard</h5>
+        <div class="subtitle">Overview produksi · @DateTime.Now.ToString("dddd, dd MMMM yyyy")</div>
     </div>
+</div>
 
-    @if (Model == null)
+<div class="container-fluid px-4">
+
+    @if (summary == null)
     {
         <div class="alert alert-warning">Gagal memuat data summary.</div>
     }
     else
     {
         <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm text-center h-100">
-                    <div class="card-body py-4">
-                        <div class="fs-1 fw-bold text-dark">@Model.Total</div>
-                        <div class="text-muted small mt-1">Total Work Order</div>
-                    </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#f1f5f9">📋</div>
+                    <div class="stat-value text-dark">@summary.Total</div>
+                    <div class="stat-label">Total Work Order</div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm text-center h-100">
-                    <div class="card-body py-4">
-                        <div class="fs-1 fw-bold text-secondary">@Model.Pending</div>
-                        <div class="text-muted small mt-1">Pending</div>
-                    </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#f1f5f9">⏳</div>
+                    <div class="stat-value" style="color:#64748b">@summary.Pending</div>
+                    <div class="stat-label">Pending</div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm text-center h-100">
-                    <div class="card-body py-4">
-                        <div class="fs-1 fw-bold text-primary">@Model.InProgress</div>
-                        <div class="text-muted small mt-1">In Progress</div>
-                    </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#dbeafe">⚙️</div>
+                    <div class="stat-value" style="color:#2563eb">@summary.InProgress</div>
+                    <div class="stat-label">In Progress</div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm text-center h-100">
-                    <div class="card-body py-4">
-                        <div class="fs-1 fw-bold text-success">@Model.Completed</div>
-                        <div class="text-muted small mt-1">Completed</div>
-                    </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#dcfce7">✅</div>
+                    <div class="stat-value" style="color:#16a34a">@summary.Completed</div>
+                    <div class="stat-label">Completed</div>
                 </div>
             </div>
         </div>
 
-        <div class="d-flex justify-content-end">
-            <a asp-controller="WorkOrder" asp-action="Index"
-               class="btn btn-outline-dark btn-sm px-4">
-                Lihat Semua Work Order →
-            </a>
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center py-3 px-4" style="background:#fff">
+                <span style="font-size:0.875rem;font-weight:600;color:#0f172a">Work Order Terbaru</span>
+                <a asp-controller="WorkOrder" asp-action="Index"
+                   class="btn btn-outline-dark btn-sm">Lihat Semua →</a>
+            </div>
+            @if (!recent.Any())
+            {
+                <div class="card-body text-center py-5">
+                    <div class="text-muted">Belum ada work order.</div>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Order Number</th>
+                                <th>Produk</th>
+                                <th>Status</th>
+                                <th>Step Saat Ini</th>
+                                <th>Dibuat</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var wo in recent)
+                            {
+                                <tr>
+                                    <td class="fw-semibold" style="color:#0f172a">@wo.OrderNumber</td>
+                                    <td>@wo.ProductName</td>
+                                    <td><span class="badge @GetStatusClass(wo.Status)">@GetStatusLabel(wo.Status)</span></td>
+                                    <td style="color:#64748b">@wo.CurrentStep</td>
+                                    <td style="color:#94a3b8;font-size:0.8rem">@wo.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <a asp-controller="WorkOrder" asp-action="Detail" asp-route-id="@wo.Id"
+                                           class="btn btn-outline-dark btn-sm">Detail →</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     }
 </div>
+
+@functions {
+    string GetStatusClass(string status) => status switch
+    {
+        "pending"     => "badge-pending",
+        "in_progress" => "badge-in-progress",
+        "completed"   => "badge-done",
+        "cancelled"   => "badge-failed",
+        _             => "badge-pending"
+    };
+
+    string GetStatusLabel(string status) => status switch
+    {
+        "pending"     => "Pending",
+        "in_progress" => "In Progress",
+        "completed"   => "Completed",
+        "cancelled"   => "Cancelled",
+        _             => status
+    };
+}

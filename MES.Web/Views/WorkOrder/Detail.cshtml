@@ -4,61 +4,107 @@
     ViewData["Title"] = $"Detail - {Model.OrderNumber}";
 }
 
-<div class="container-fluid py-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
+    <div class="container-fluid px-0 d-flex justify-content-between align-items-center">
         <div>
-            <h5 class="mb-0 fw-semibold">@Model.OrderNumber</h5>
-            <small class="text-muted">@Model.ProductName · @Model.ProductCode</small>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a asp-action="Index" style="color:#94a3b8;font-size:0.8rem;text-decoration:none">
+                    Work Orders
+                </a>
+                <span style="color:#cbd5e1;font-size:0.8rem">/</span>
+                <span style="font-size:0.8rem;color:#64748b">@Model.OrderNumber</span>
+            </div>
+            <h5>@Model.OrderNumber</h5>
+            <div class="subtitle">@Model.ProductName &middot; @Model.ProductCode</div>
         </div>
         <div class="d-flex gap-2">
             <a asp-action="Logs" asp-route-id="@Model.Id"
-               class="btn btn-outline-secondary btn-sm">📋 Activity Log</a>
-            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">← Kembali</a>
+               class="btn btn-outline-dark btn-sm">📋 Activity Log</a>
+            <a asp-action="Index" class="btn btn-outline-dark btn-sm">← Kembali</a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4">
+
+    @* Step Progress Bar *@
+    <div class="card mb-4 p-4">
+        <div class="step-progress">
+            @foreach (var step in Model.Steps)
+            {
+                var cls = step.Status == "done" ? "done"
+                        : step.Status == "in_progress" ? "active"
+                        : step.Status == "failed" ? "failed"
+                        : "";
+                var icon = step.Status == "done" ? "✓"
+                         : step.Status == "in_progress" ? "●"
+                         : step.Status == "failed" ? "✗"
+                         : step.StepOrder.ToString();
+                <div class="step-progress-item @cls text-center">
+                    <div class="step-dot">@icon</div>
+                    <div class="step-label">@step.StepName</div>
+                </div>
+            }
         </div>
     </div>
 
     <div class="row g-4">
 
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-dark text-white py-3">
-                    <h6 class="mb-0">Informasi Work Order</h6>
+            <div class="card h-100">
+                <div class="card-header px-4 py-3" style="background:#fff">
+                    Informasi Work Order
                 </div>
-                <div class="card-body">
+                <div class="card-body px-4">
                     <table class="table table-sm table-borderless mb-0">
                         <tr>
-                            <td class="text-muted small" style="width:40%">Order Number</td>
-                            <td class="fw-semibold">@Model.OrderNumber</td>
+                            <td class="text-muted small ps-0" style="width:45%">Order Number</td>
+                            <td class="fw-semibold ps-0">@Model.OrderNumber</td>
                         </tr>
                         <tr>
-                            <td class="text-muted small">Produk</td>
-                            <td>@Model.ProductName</td>
+                            <td class="text-muted small ps-0">Produk</td>
+                            <td class="ps-0">@Model.ProductName</td>
                         </tr>
                         <tr>
-                            <td class="text-muted small">Kode</td>
-                            <td>@Model.ProductCode</td>
+                            <td class="text-muted small ps-0">Kode</td>
+                            <td class="ps-0">@Model.ProductCode</td>
                         </tr>
                         <tr>
-                            <td class="text-muted small">Quantity</td>
-                            <td>@Model.Quantity</td>
+                            <td class="text-muted small ps-0">Quantity</td>
+                            <td class="ps-0">@Model.Quantity</td>
                         </tr>
                         <tr>
-                            <td class="text-muted small">Status</td>
-                            <td>
+                            <td class="text-muted small ps-0">Status</td>
+                            <td class="ps-0">
                                 <span class="badge @GetStatusClass(Model.Status)">
                                     @GetStatusLabel(Model.Status)
                                 </span>
                             </td>
                         </tr>
                         <tr>
-                            <td class="text-muted small">Step Saat Ini</td>
-                            <td class="fw-semibold">@Model.CurrentStep</td>
+                            <td class="text-muted small ps-0">Step Saat Ini</td>
+                            <td class="fw-semibold ps-0">@Model.CurrentStep</td>
                         </tr>
                         <tr>
-                            <td class="text-muted small">Dibuat</td>
-                            <td class="small">
+                            <td class="text-muted small ps-0">Dibuat</td>
+                            <td class="ps-0 small">
                                 @Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small ps-0">Progress</td>
+                            <td class="ps-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:6px;border-radius:3px">
+                                        @{
+                                            var done = Model.Steps.Count(s => s.Status == "done");
+                                            var total = Model.Steps.Count;
+                                            var pct = total > 0 ? (done * 100 / total) : 0;
+                                        }
+                                        <div class="progress-bar bg-success" style="width:@pct%"></div>
+                                    </div>
+                                    <small class="text-muted">@done/@total</small>
+                                </div>
                             </td>
                         </tr>
                     </table>
@@ -67,18 +113,18 @@
         </div>
 
         <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">Step Produksi</h6>
-                    <small class="text-white-50">
-                        @Model.Steps.Count(s => s.Status == "done") / @Model.Steps.Count step selesai
-                    </small>
+            <div class="card">
+                <div class="card-header px-4 py-3 d-flex justify-content-between align-items-center" style="background:#fff">
+                    <span>Step Produksi</span>
+                    <span style="font-size:0.75rem;color:#94a3b8">
+                        @Model.Steps.Count(s => s.Status == "done") / @Model.Steps.Count selesai
+                    </span>
                 </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover mb-0 align-middle">
-                        <thead class="table-light">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
                             <tr>
-                                <th style="width:5%">#</th>
+                                <th style="width:40px">#</th>
                                 <th>Step</th>
                                 <th>Status</th>
                                 <th>Operator</th>
@@ -90,70 +136,53 @@
                         <tbody>
                             @foreach (var step in Model.Steps)
                             {
-                                <tr class="@(step.Status == "in_progress" ? "table-primary" : step.Status == "failed" ? "table-danger" : "")">
-                                    <td class="text-muted small">@step.StepOrder</td>
-                                    <td class="fw-semibold">@step.StepName</td>
+                                <tr style="@(step.Status == "in_progress" ? "background:#f0f7ff" : step.Status == "failed" ? "background:#fef2f2" : "")">
+                                    <td style="color:#94a3b8">@step.StepOrder</td>
+                                    <td class="fw-semibold" style="color:#0f172a">@step.StepName</td>
                                     <td>
                                         <span class="badge @GetStepClass(step.Status)">
                                             @GetStepLabel(step.Status)
                                         </span>
                                     </td>
-                                    <td class="text-muted small">@(step.ExecutedBy ?? "-")</td>
-                                    <td class="text-muted small">
-                                        @(step.StartedAt.HasValue
-                                            ? step.StartedAt.Value.ToLocalTime().ToString("dd MMM HH:mm")
-                                            : "-")
+                                    <td style="color:#64748b">@(step.ExecutedBy ?? "-")</td>
+                                    <td style="color:#94a3b8;font-size:0.8rem">
+                                        @(step.StartedAt.HasValue ? step.StartedAt.Value.ToLocalTime().ToString("dd MMM HH:mm") : "-")
                                     </td>
-                                    <td class="text-muted small">
-                                        @(step.CompletedAt.HasValue
-                                            ? step.CompletedAt.Value.ToLocalTime().ToString("dd MMM HH:mm")
-                                            : "-")
+                                    <td style="color:#94a3b8;font-size:0.8rem">
+                                        @(step.CompletedAt.HasValue ? step.CompletedAt.Value.ToLocalTime().ToString("dd MMM HH:mm") : "-")
                                     </td>
                                     <td>
                                         @if (step.Status == "in_progress")
                                         {
-                                            <form asp-controller="Step" asp-action="Finish"
-                                                  method="post" class="d-inline">
+                                            <form asp-controller="Step" asp-action="Finish" method="post" class="d-inline">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="workOrderId" value="@Model.Id" />
-                                                <button type="submit" name="stepExecutionId"
-                                                        value="@step.Id"
-                                                        class="btn btn-success btn-sm">
-                                                    ✓ Finish
-                                                </button>
+                                                <button type="submit" name="stepExecutionId" value="@step.Id"
+                                                        class="btn btn-success btn-sm">✓ Finish</button>
                                             </form>
-
                                             @if (step.StepName == "Quality Check")
                                             {
-                                                <form asp-controller="Step" asp-action="FailQc"
-                                                      method="post" class="d-inline ms-1">
+                                                <form asp-controller="Step" asp-action="FailQc" method="post" class="d-inline ms-1">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="workOrderId" value="@Model.Id" />
                                                     <input type="hidden" name="reason" value="QC tidak lolos" />
-                                                    <button type="submit" name="stepExecutionId"
-                                                            value="@step.Id"
-                                                            class="btn btn-danger btn-sm">
-                                                        ✗ Fail QC
-                                                    </button>
+                                                    <button type="submit" name="stepExecutionId" value="@step.Id"
+                                                            class="btn btn-danger btn-sm">✗ Fail QC</button>
                                                 </form>
                                             }
                                         }
                                         else if (step.CanStart)
                                         {
-                                            <form asp-controller="Step" asp-action="Start"
-                                                  method="post" class="d-inline">
+                                            <form asp-controller="Step" asp-action="Start" method="post" class="d-inline">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="workOrderId" value="@Model.Id" />
-                                                <button type="submit" name="stepExecutionId"
-                                                        value="@step.Id"
-                                                        class="btn btn-primary btn-sm">
-                                                    ▶ Start
-                                                </button>
+                                                <button type="submit" name="stepExecutionId" value="@step.Id"
+                                                        class="btn btn-primary btn-sm">▶ Start</button>
                                             </form>
                                         }
                                         else
                                         {
-                                            <span class="text-muted small">-</span>
+                                            <span style="color:#cbd5e1">—</span>
                                         }
                                     </td>
                                 </tr>
@@ -163,7 +192,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -176,7 +204,6 @@
         "cancelled"   => "badge-failed",
         _             => "badge-pending"
     };
-
     string GetStatusLabel(string status) => status switch
     {
         "pending"     => "Pending",
@@ -185,7 +212,6 @@
         "cancelled"   => "Cancelled",
         _             => status
     };
-
     string GetStepClass(string status) => status switch
     {
         "pending"     => "badge-pending",
@@ -194,7 +220,6 @@
         "failed"      => "badge-failed",
         _             => "badge-pending"
     };
-
     string GetStepLabel(string status) => status switch
     {
         "pending"     => "Pending",

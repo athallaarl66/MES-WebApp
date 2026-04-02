@@ -1,3 +1,5 @@
+using MES.Core.DTOs;
+using MES.Web.Models;
 using MES.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +17,16 @@ public class DashboardController : Controller
     public async Task<IActionResult> Index()
     {
         var summary = await _workOrderApi.GetSummaryAsync();
-        return View(summary);
+        var allWorkOrders = await _workOrderApi.GetAllWorkOrdersAsync();
+
+        var recentWorkOrders = allWorkOrders
+            .OrderByDescending(wo => wo.CreatedAt)
+            .Take(5)
+            .ToList();
+
+        ViewBag.Summary = summary;
+        ViewBag.RecentWorkOrders = recentWorkOrders;
+
+        return View();
     }
 }
