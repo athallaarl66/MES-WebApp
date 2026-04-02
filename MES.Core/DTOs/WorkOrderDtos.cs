@@ -23,14 +23,18 @@ public class WorkOrderResponse
 }
  public class StepExecutionResponse
 {
-    public int Id { get; set; }
-    public string StepName { get; set; } = string.Empty;
+   public int Id { get; set; }
+    public string StepName { get; set; }
     public int StepOrder { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public string? ExecutedBy { get; set; }
+    public string Status { get; set; }
+    public string ExecutedBy { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
-    public bool CanStart { get; set; }  // backend yang tentuin, bukan View
+    
+    // Flag untuk UI Control
+    public bool CanStart { get; set; }
+    public bool CanPassQc { get; set; }
+    public bool CanFailQc { get; set; }
 }
 
 public class WorkOrderSummaryDto

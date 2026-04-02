@@ -2,41 +2,56 @@ using MES.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
+// SERVICES REGISTRATION 
 builder.Services.AddControllersWithViews();
+// untuk web biar  handle JSON dari API dengan bener
+builder.Services.AddControllers().AddJsonOptions(options => {
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+});
 
 // HttpClient ke API
 builder.Services.AddHttpClient("MesApi", client =>
 {
     client.BaseAddress = new Uri(
-        builder.Configuration["ApiSettings:BaseUrl"] 
-        ?? "http://localhost:5096"
+        builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5096"
     );
 });
 
-// Register service
+// CORS Policy  
+builder.Services.AddCors(options => {
+    options.AddDefaultPolicy(policy => {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddScoped<IWorkOrderApiService, WorkOrderApiService>();
 
 var app = builder.Build();
 
-// Error handling (production)
+//MIDDLEWARE PIPELINE 
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-// Middleware pipeline
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-app.UseRouting();
+ app.UseRouting(); //menentukan rute dulu
 
-app.UseAuthorization();
+app.UseCors();    //Cek izin akses (CORS harus setelah Routing)
 
-// Routing
+app.UseAuthorization(); //Cek siapa yang akses
+
+//ENDPOINTS
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=WorkOrder}/{action=Index}/{id?}");
+
+app.MapControllers(); //untuk Controller API di dalam Web bisa jalan
 
 app.Run();

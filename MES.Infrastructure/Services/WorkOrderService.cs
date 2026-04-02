@@ -120,7 +120,7 @@ public async Task<List<ActivityLogDto>> GetActivityLogsAsync(int workOrderId)
     return logs;
 }
 
-    private static WorkOrderResponse MapToResponse(WorkOrder workOrder)
+  private static WorkOrderResponse MapToResponse(WorkOrder workOrder)
 {
     var steps = workOrder.StepExecutions
         .OrderBy(se => se.StepDefinition.Order)
@@ -132,21 +132,24 @@ public async Task<List<ActivityLogDto>> GetActivityLogsAsync(int workOrderId)
             Status = se.Status,
             ExecutedBy = se.ExecutedBy,
             StartedAt = se.StartedAt,
-            CompletedAt = se.CompletedAt
+            CompletedAt = se.CompletedAt,
+            // Logic Tombol QC
+            CanPassQc = se.StepDefinition.Name == "Quality Check" && se.Status == StepStatus.InProgress,
+            CanFailQc = se.StepDefinition.Name == "Quality Check" && se.Status == StepStatus.InProgress
         }).ToList();
 
-    // tentuin step mana yang valid untuk distart
-    var stepBerikutnya = steps
-        .Where(s => s.Status == StepStatus.Pending)
-        .FirstOrDefault(s => steps
-            .Where(prev => prev.StepOrder < s.StepOrder)
-            .All(prev => prev.Status == StepStatus.Done || prev.Status == StepStatus.Failed));
+    var adaInProgress = steps.Any(s => s.Status == StepStatus.InProgress);
+    
+    // Logic: Cari step pertama yang statusnya Pending dan sebelumnya sudah Done
+    var nextToStart = steps
+        .OrderBy(s => s.StepOrder)
+        .FirstOrDefault(s => s.Status == StepStatus.Pending && 
+             steps.Where(p => p.StepOrder < s.StepOrder).All(p => p.Status == StepStatus.Done));
 
-    if (stepBerikutnya != null)
-        stepBerikutnya.CanStart = true;
-
-    var currentStep = steps.FirstOrDefault(s => s.Status == StepStatus.InProgress)
-        ?? steps.FirstOrDefault(s => s.Status == StepStatus.Pending);
+    if (!adaInProgress && nextToStart != null)
+    {
+        nextToStart.CanStart = true;
+    }
 
     return new WorkOrderResponse
     {
@@ -156,8 +159,6 @@ public async Task<List<ActivityLogDto>> GetActivityLogsAsync(int workOrderId)
         ProductCode = workOrder.ProductCode,
         Quantity = workOrder.Quantity,
         Status = workOrder.Status,
-        CreatedAt = workOrder.CreatedAt,
-        CurrentStep = currentStep?.StepName ?? "Completed",
         Steps = steps
     };
 }
