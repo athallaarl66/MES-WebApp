@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.AddHealthChecks();
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
@@ -43,4 +45,5 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" })); 
+app.MapHealthChecks("/health");
 app.Run();
