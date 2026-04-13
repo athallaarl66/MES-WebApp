@@ -5,73 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — MES System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
 
-    <nav class="mes-navbar navbar navbar-expand-sm">
-        <div class="container-fluid px-0">
-            <a class="navbar-brand" asp-controller="Dashboard" asp-action="Index">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-                </svg>
-                MES System
-            </a>
-
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
-                    data-bs-target=".navbar-collapse" style="color:#94a3b8">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="navbar-collapse collapse ms-3">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")"
-                           asp-controller="Dashboard" asp-action="Index">
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "WorkOrder" ? "active" : "")"
-                           asp-controller="WorkOrder" asp-action="Index">
-                            Work Orders
-                        </a>
-                    </li>
-                </ul>
-            </div>
+<nav class="navbar navbar-expand-md mes-navbar">
+    <div class="container-fluid">
+        <a class="navbar-brand" asp-controller="Dashboard" asp-action="Index">MES System</a>
+        <div class="navbar-nav ms-3">
+            @{
+                var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+            }
+            <a class="nav-link @(currentController == "Dashboard" ? "active" : "")"
+               asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+            <a class="nav-link @(currentController == "WorkOrder" ? "active" : "")"
+               asp-controller="WorkOrder" asp-action="Index">Work Orders</a>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    <main>
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
-                @TempData["Error"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-                @TempData["Success"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        @RenderBody()
-    </main>
-
-    <footer class="mes-footer">
-        <div class="container-fluid px-0">
-            MES System &mdash; Manufacturing Execution System &copy; @DateTime.Now.Year
+<main>
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show m-3 mb-0" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    </footer>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show m-3 mb-0" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    @RenderBody()
+</main>
+
+<footer class="mes-footer">
+    MES System &mdash; Manufacturing Execution System &copy; @DateTime.Now.Year
+</footer>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

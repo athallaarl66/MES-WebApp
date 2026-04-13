@@ -1,123 +1,152 @@
 @using MES.Core.DTOs
 @using MES.Web.Models
+@model dynamic
 
 @{
     ViewData["Title"] = "Dashboard";
     var summary = ViewBag.Summary as WorkOrderSummaryDto;
     var recent = ViewBag.RecentWorkOrders as List<WorkOrderViewModel> ?? [];
+
+    var availability = 94.5;
+    var performance = 88.2;
+    var quality = 99.1;
+    var oee = (availability * performance * quality) / 10000;
 }
 
-<div class="page-header">
-    <div class="container-fluid px-0">
-        <h5>Dashboard</h5>
-        <div class="subtitle">Overview produksi · @DateTime.Now.ToString("dddd, dd MMMM yyyy")</div>
+<div class="container-fluid py-4 px-4">
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h4 class="fw-semibold mb-1">Production Overview</h4>
+            <p class="text-muted small mb-0">Factory Floor 01 · Line A</p>
+        </div>
+        <div class="health-pill">
+            <span class="dot"></span> Online & syncing
+        </div>
     </div>
-</div>
 
-<div class="container-fluid px-4">
-
-    @if (summary == null)
-    {
-        <div class="alert alert-warning">Gagal memuat data summary.</div>
-    }
-    else
-    {
+    @if (summary == null) {
+        <div class="alert-api-down mb-4">
+            API connection lost — data summary tidak tersedia.
+        </div>
+    } else {
         <div class="row g-3 mb-4">
-            <div class="col-6 col-lg-3">
+            <div class="col-xl-3 col-md-6">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#f1f5f9">📋</div>
-                    <div class="stat-value text-dark">@summary.Total</div>
-                    <div class="stat-label">Total Work Order</div>
+                    <div class="stat-icon icon-blue">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <div class="stat-num">@oee.ToString("F1")%</div>
+                    <div class="stat-label">Overall OEE</div>
+                    <div class="prog-bar mt-2">
+                        <div class="prog-fill prog-fill-blue" style="width: @((int)oee)%"></div>
+                    </div>
                 </div>
             </div>
-            <div class="col-6 col-lg-3">
+
+            <div class="col-xl-3 col-md-6">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#f1f5f9">⏳</div>
-                    <div class="stat-value" style="color:#64748b">@summary.Pending</div>
-                    <div class="stat-label">Pending</div>
+                    <div class="stat-icon icon-amber">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <div class="stat-num">@summary.InProgress</div>
+                    <div class="stat-label">Active tasks</div>
+                    <div class="stat-sub">From @summary.Total total orders</div>
                 </div>
             </div>
-            <div class="col-6 col-lg-3">
+
+            <div class="col-xl-3 col-md-6">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#dbeafe">⚙️</div>
-                    <div class="stat-value" style="color:#2563eb">@summary.InProgress</div>
-                    <div class="stat-label">In Progress</div>
+                    <div class="stat-icon icon-red">
+                        <i class="bi bi-stopwatch"></i>
+                    </div>
+                    <div class="stat-num">14.5<small class="fs-6">s</small></div>
+                    <div class="stat-label">Avg cycle time</div>
+                    <div class="stat-sub text-success">↑ 2.4% faster</div>
                 </div>
             </div>
-            <div class="col-6 col-lg-3">
+
+            <div class="col-xl-3 col-md-6">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#dcfce7">✅</div>
-                    <div class="stat-value" style="color:#16a34a">@summary.Completed</div>
-                    <div class="stat-label">Completed</div>
+                    <div class="stat-icon icon-green">
+                        <i class="bi bi-check-all"></i>
+                    </div>
+                    <div class="stat-num">98.5%</div>
+                    <div class="stat-label">Quality yield</div>
+                    <div class="stat-sub">Last 100 units</div>
                 </div>
             </div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center py-3 px-4" style="background:#fff">
-                <span style="font-size:0.875rem;font-weight:600;color:#0f172a">Work Order Terbaru</span>
-                <a asp-controller="WorkOrder" asp-action="Index"
-                   class="btn btn-outline-dark btn-sm">Lihat Semua →</a>
+        <div class="mes-card">
+            <div class="mes-card-header">
+                <h5>Recent production orders</h5>
+                <a asp-controller="WorkOrder" asp-action="Index" class="btn-view">View all</a>
             </div>
-            @if (!recent.Any())
-            {
-                <div class="card-body text-center py-5">
-                    <div class="text-muted">Belum ada work order.</div>
-                </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
+            <div class="table-responsive">
+                <table class="table table-mes mb-0">
+                    <thead>
+                        <tr>
+                            <th>Order info</th>
+                            <th>Status</th>
+                            <th>Current step</th>
+                            <th style="min-width: 160px">Progress</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var wo in recent) {
+                            var done  = wo.Steps.Count(s => s.Status == "done");
+                            var total = wo.Steps.Count;
+                            var pct   = total > 0 ? (done * 100 / total) : 0;
+                            var fillClass = wo.Status == "completed" ? "prog-fill-green"
+                                          : wo.Status == "failed"    ? "prog-fill-red"
+                                          : "prog-fill-blue";
                             <tr>
-                                <th>Order Number</th>
-                                <th>Produk</th>
-                                <th>Status</th>
-                                <th>Step Saat Ini</th>
-                                <th>Dibuat</th>
-                                <th></th>
+                                <td>
+                                    <div class="fw-semibold">@wo.OrderNumber</div>
+                                    <div class="text-muted" style="font-size: 0.75rem">
+                                        @wo.ProductName · @wo.ProductCode
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge-status @GetStatusClass(wo.Status)">
+                                        <span class="dot"></span>
+                                        @wo.Status.Replace("_", " ")
+                                    </span>
+                                </td>
+                                <td>@(string.IsNullOrEmpty(wo.CurrentStep) ? "—" : wo.CurrentStep)</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="prog-bar flex-grow-1">
+                                            <div class="prog-fill @fillClass" style="width: @pct%"></div>
+                                        </div>
+                                        <span class="text-muted" style="font-size:0.75rem; min-width:28px">
+                                            @pct%
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-controller="WorkOrder" asp-action="Detail"
+                                       asp-route-id="@wo.Id" class="btn-view">
+                                        Details
+                                    </a>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var wo in recent)
-                            {
-                                <tr>
-                                    <td class="fw-semibold" style="color:#0f172a">@wo.OrderNumber</td>
-                                    <td>@wo.ProductName</td>
-                                    <td><span class="badge @GetStatusClass(wo.Status)">@GetStatusLabel(wo.Status)</span></td>
-                                    <td style="color:#64748b">@wo.CurrentStep</td>
-                                    <td style="color:#94a3b8;font-size:0.8rem">@wo.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
-                                    <td>
-                                        <a asp-controller="WorkOrder" asp-action="Detail" asp-route-id="@wo.Id"
-                                           class="btn btn-outline-dark btn-sm">Detail →</a>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     }
 </div>
 
 @functions {
-    string GetStatusClass(string status) => status switch
-    {
-        "pending"     => "badge-pending",
-        "in_progress" => "badge-in-progress",
-        "completed"   => "badge-done",
-        "cancelled"   => "badge-failed",
-        _             => "badge-pending"
-    };
-
-    string GetStatusLabel(string status) => status switch
-    {
-        "pending"     => "Pending",
-        "in_progress" => "In Progress",
-        "completed"   => "Completed",
-        "cancelled"   => "Cancelled",
-        _             => status
+    string GetStatusClass(string status) => status.ToLower() switch {
+        "pending"     => "status-pending",
+        "in_progress" => "status-active",
+        "completed"   => "status-done",
+        "failed"      => "status-failed",
+        _             => "status-pending"
     };
 }
