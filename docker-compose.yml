@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: MES.API/Dockerfile
     container_name: mes-api
-    restart: always
+    restart: unless-stopped
     # Menambahkan DNS Google agar container bisa mengenali alamat Neon DB (Host luar)
     dns:
       - 8.8.8.8
